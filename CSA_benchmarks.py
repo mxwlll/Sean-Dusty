@@ -20,8 +20,8 @@ dust_dir = ['/home/physics/Research/DUSTY/DUSTY/Lib_nk/',
             "C:/UTSA/Research/DUSTY/DUSTY/Lib_nk/"]
 
 
-nk_path = dust_dir[0]               #where the dust is 
-dust = 'oliv_nk_y.nk'                  #DUST NAME HERE
+nk_path = dust_dir[1]               #where the dust is 
+dust = 'oliv_nk_y.nk'               #DUST NAME HERE
 rho = 3.33 #grams cm**-3            #density
 pathy = os.path.join(nk_path, dust) #pipeline is open
 
@@ -31,7 +31,7 @@ wavelen, n_dust, k_dust = np.loadtxt(pathy, skiprows=12, unpack=True)
 m = np.array([complex(n_dust[i], k_dust[i]) for i in range(len(wavelen))])
                                     #joins n, k values into complex number
 
-wavelen = wavelen**(-1) * 10000   #Convert wavelen2 to waveLENGTH from waveNUMBER
+wavelen = wavelen**(-1) * 10000     #Convert wavelen2 to waveLENGTH from waveNUMBER
 
 
 ##############################################################################
@@ -58,6 +58,32 @@ m3 = np.array([complex(n_dust3[i], k_dust3[i]) for i in range(len(wavelen3))])
 
 
 ##############################################################################
+### finding average m value for different dusts
+# weights=[]
+# m_avg = np.array([(m[j]+m2[j]+m3[j])/3 for j in range(min(len(m), len(m2), len(m3)))])
+wt_a = 1
+wt_b = 1
+wt_c = 1
+
+avg_wts=[wt_a,wt_b,wt_c]
+
+
+m_avg = np.array([np.average((m[j], m2[j], m3[j]),axis=0,weights=avg_wts)for j in range(min(len(m),len(m2),len(m3)))])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############################################################################
 ### Spheres
 
 # asph = np.array(a_sph(m))           #spherical, dust1
@@ -73,6 +99,8 @@ m3 = np.array([complex(n_dust3[i], k_dust3[i]) for i in range(len(wavelen3))])
 
 ##############################################################################
 ### Ellipsoids
+
+
 acde1 = np.array(a_cde1(m))           #CDE1, dust1
 kap_cde1 = [((2 * np.pi / (1e-4*wavelen[i]))/rho)*np.imag(acde1[i])for i in range(len(wavelen))]
 
@@ -89,10 +117,11 @@ kap_cde1_2 = [((2 * np.pi / (1e-4*wavelen2[i]))/rho)*np.imag(acde1_2[i])for i in
 acde1_3 = np.array(a_cde1(m3))        #CDE1, dust3
 kap_cde1_3 = [((2 * np.pi / (1e-4*wavelen3[i]))/rho)*np.imag(acde1_3[i])for i in range(len(wavelen3))]
 
+acde1_avg = np.array(a_cde1(m_avg))
+kap_cde1_avg = [((2 * np.pi / (1e-4*wavelen3[i]))/rho)*np.imag(acde1_avg[i])for i in range(len(wavelen3))]
 
 
-
-###############################################################################
+##############################################################################
 #Bring in benchmarking data
 testdata = np.loadtxt("cde1_fab01_fig7_olivine.csv", delimiter=',', skiprows=1)
 
@@ -104,24 +133,24 @@ testlamda2 = np.array([testdatashort[i,0] for i in range(len(testdatashort))])
 testkappa2 = np.array([testdatashort[i,1] for i in range(len(testdatashort))])
 
 
-# ##############################################################################
-### Comparing different shapes
-fig1, ax1 = plt.subplots()
-title = 'Benchmark - OlivineX - Fabian 2001'
-ax1.set(xscale='linear', yscale='log', xlim=(8.5,44), ylim=(1, 10000))
-ax1.set_title(title, fontsize=16)
-ax1.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
-ax1.set_ylabel(r'$<\kappa>$ cm$^{2}$ g$^{-1}$', fontsize=14)
-ax1.plot(wavelen, kap_cde1, label='CDE1 - {}'.format(dust[:-3]))
-# ax1.plot(wavelen2, kap_cde1_2, label='CDE1 - {}'.format(dust2[:-3]))
-ax1.plot(wavelen3, kap_cde1_3, label='CDE1 - {}'.format(dust3[:-3]))
+# ############################################################################
+# ### Comparing different shapes
+# fig1, ax1 = plt.subplots()
+# title = 'Benchmark - Olivine average - Fabian 2001'
+# ax1.set(xscale='linear', yscale='log', xlim=(8.5,44), ylim=(1, 10000))
+# ax1.set_title(title, fontsize=16)
+# ax1.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
+# ax1.set_ylabel(r'$<\kappa>$ cm$^{2}$ g$^{-1}$', fontsize=14)
+# # ax1.plot(wavelen, kap_cde1, label='CDE1 - {}'.format(dust[:-3]))
+# # ax1.plot(wavelen2, kap_cde1_2, label='CDE1 - {}'.format(dust2[:-3]))
+# # ax1.plot(wavelen3, kap_cde1_3, label='CDE1 - {}'.format(dust3[:-3]))
+# ax1.plot(wavelen3, kap_cde1_avg, label='CDE1 - {}'.format('average'))
+# ax1.plot(testlamda, testkappa,'red', label='Benchmark')
+# ax1.plot(testlamda2, testkappa2, 'red')
 
-ax1.plot(testlamda, testkappa,'red', label='Benchmark')
-ax1.plot(testlamda2, testkappa2, 'red')
 
-
-ax1.legend()
-fig1.savefig(title+'.png')
+# ax1.legend()
+# fig1.savefig(title+'.png')
 
 
 
