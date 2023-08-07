@@ -6,7 +6,7 @@ Created on Wed Dec  7 12:24:51 2022
 """
 
 import numpy as np
-
+from scipy.integrate import quad
 
 def a_sph(m):
     top = m**2 - 1
@@ -40,12 +40,6 @@ def a_cde2(m):
     e = 11/(6 * (m**2 - 1))
     f = 0.25
     return -a*b + c + d + e + f
-
-
-
-
-
-
 
 
 def a_cds_unlim(m):
@@ -82,7 +76,7 @@ def a_cds_lim(m, a, b):
     e2min = 1.0 - xi_min**2 
     e2max = 1.0 - xi_max**2
     Lmin1 = (1.0 - e2min)/(e2min)
-    Lmin2 = (-1.0 + (1.0/(2.0 * np.sqrt(e2min))) * np.ln((1 + np.sqrt(e2min))/
+    Lmin2 = (-1.0 + (1.0/(2.0 * np.sqrt(e2min))) * np.log((1 + np.sqrt(e2min))/
                                                          (1 - np.sqrt(e2min))))
     Lmin = Lmin1 * Lmin2
     
@@ -91,20 +85,11 @@ def a_cds_lim(m, a, b):
     Lmax = Lmax1 * Lmax2    
     
     a1 = 1.0/(3.0 * (Lmax-Lmin))
-    a2 = np.ln((1.0 + Lmax * (m**2 - 1.0)))
-    a3 = 4.0 * np.ln((1.0 + m**2 + Lmin * (1.0 - m**2))/
+    a2 = np.log((1.0 + Lmax * (m**2 - 1.0)))
+    a3 = 4.0 * np.log((1.0 + m**2 + Lmin * (1.0 - m**2))/
                      (1.0 + m**2 + Lmax * (1.0 - m**2)))
     a = a1 * (a2 + a3)
     return a
-
-
-
-
-
-
-
-
-
 
 
 def a_dhs(m):
@@ -171,16 +156,102 @@ def sigma(m, lamda):
 
 
 
-def spheroid_distributions(a, b):
-    if a/b <= 1:        #problate
-        #on this line
-        e = np.sqrt(1- (a**2)/(b**2))
-    elif a/b >1:        #oblate
-        e = np.sqrt(1- (b**2)/(a**2))
-    return e 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def integrand_Li(s, a, b, c):
+    '''
+    
+
+    Parameters
+    ----------
+    s : TYPE
+        DESCRIPTION.
+    a : TYPE
+        DESCRIPTION.
+    b : TYPE
+        DESCRIPTION.
+    c : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
+    return (a*b*c)/(2 * np.sqrt((s+a**2)**3 * (s+b**2) * (s+c**2)))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+def shape_factors(a,b,c):
+    '''
+    Calculates the Geometric factor L_i for a spheroid of given axes a, b, c
+
+    Parameters
+    ----------
+    a : TYPE
+        DESCRIPTION.
+    b : TYPE
+        DESCRIPTION.
+    c : TYPE
+        DESCRIPTION.
+
+    Returns
+    -------
+    None.
+
+    '''
+    L1 = quad(integrand_Li, 0, np.inf, args=(a,b,c))
+    L2 = quad(integrand_Li, 0, np.inf, args=(b,c,a))
+    L3 = quad(integrand_Li, 0, np.inf, args=(c,b,a))
+    return np.array([L1[0], L2[0], L3[0], L1[0]+L2[0]+L3[0]])
+
+
 
     
-
+    
+def probability_distribution(L1, L2, L3, dist_type):
+    if dist_type == 'BHCDE':
+        return 2
+    else:
+        return True
     
     
     
@@ -191,9 +262,5 @@ def spheroid_distributions(a, b):
     
     
     
-    
-    
-    
-
 
 
