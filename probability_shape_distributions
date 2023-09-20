@@ -2,18 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Sep 12 10:23:54 2023
-
 @author: Sean Dillon
-
 This code will allow us to specify a probability shape distribution that can 
 then be used to calculate the average absorption and scattering cross sections 
 over the geometric factors L1 and L2
-
-
-
-
-
-
 """
 
 
@@ -21,7 +13,7 @@ over the geometric factors L1 and L2
 
 import numpy as np
 import matplotlib.pyplot as plt
-
+import scipy.integrate as spit
 
 print('hello world')
 
@@ -36,23 +28,29 @@ def probability(dis_name, l1, l2, lmin=0):
         return 120 * l1 * l2 * l3
     elif dis_name == 'ERCDE':
         return 2/((1 - (3*lmin))**2)
-    
-    
-    
 
-def f(m, l1, l2, probability, dis_name):
+
+
+
+def f(l1, l2, m=complex(2.0,0.0), dis_name='ERCDE'):
     b = 1/(m**2 - 1)
     term1 = 1/3 * 1/(b + l1)
     term2 = 1/3 * 1/(b + l2)
     term3 = 1/3 * 1/(b + 1 - l1 - l2)
-    return (term1 + term2 + term3)*probability(dis_name, l1, l2)
+    return np.real((term1 + term2 + term3)*probability(dis_name, l1, l2)) + np.imag((term1 + term2 + term3)*probability(dis_name, l1, l2))
+
+
+
+def bounds_l1():
+    return [0,1]
+
+def bounds_l2(l1):
+    return [0,1-l1]
 
 
 
 
-
-
-
+print(spit.nquad(f, [bounds_l2, bounds_l1]))
 
 
 
