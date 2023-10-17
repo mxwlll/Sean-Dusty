@@ -21,6 +21,7 @@ import os
 
 dust_dir = ['/home/physics/Research/DUSTY/DUSTY/Lib_nk/', 
             "C:/UTSA/Research/DUSTY/DUSTY/Lib_nk/"]
+# this is the possible locations of where dust can be
 
 
 nk_path = dust_dir[0]               #where the dust is 
@@ -39,6 +40,31 @@ wavelen = wavelen**(-1) * 10000   #Convert wavelen2 to waveLENGTH from waveNUMBE
 
 
 def probability(dis_name, l1, l2, lmin=0):
+    '''
+    This is the probability distribution as a function of L1 and L2, the 
+    geometric parameters. This parameter gets inserted into the integral that 
+    calculates the average polarizability per unit volume
+
+    Parameters
+    ----------
+    dis_name : String
+        This specifies the distribution we will be using. 
+        'CDE' = Continuous Distribution of Ellipsoids
+        'ERCDE' = Externally Restricted CDE, returns CDE if lmin=0
+        'tCDE' = truncated CDE, REQUIRES MORE WORK
+    l1 : Float
+        Largest Geometric Constant, lmin<l1<1.0
+    l2 : Float
+        Second Largest Geometric Constant, lmin<l2<=l1
+    lmin : Float, optional
+        Minimum allowed geometric constant.  The default is 0.
+
+    Returns
+    -------
+    Float
+        Function dependent on l1 and l2
+
+    '''
     l3 = 1 - l1 - l2
     if dis_name == 'CDE':
         return 2
