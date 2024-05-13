@@ -8,7 +8,7 @@ from matplotlib.transforms import (
     Bbox, TransformedBbox, blended_transform_factory)
 from mpl_toolkits.axes_grid1.inset_locator import (
     BboxPatch, BboxConnector, BboxConnectorPatch)
-
+plt.close('all')
 
 # These are the most important lines of code right here. These are where you make 
 # the most changes. l is your model number. it is important that it remains in 
@@ -17,7 +17,7 @@ from mpl_toolkits.axes_grid1.inset_locator import (
 # from your filepath
 
 
-l = '0258'
+l = '0211'
 
 path = "C:/UTSA/Research/DUSTY/DUSTY/Sean_mod/Model_library/{0}/sphere-1_{0}".format(l)
 
@@ -181,9 +181,15 @@ f100 = 258e01
 
 # Spectra is now imported into your code. these files need to be in the same directory
 # as your python code.
-iso_wvlnth, iso_flux_Jy, iso_uncer_FJy, iso_uncer_F_norm = np.loadtxt('iso_spectra.txt', unpack=True, skiprows=2)
-V_date, V_mag = np.loadtxt('aavsodata.txt', unpack=True, usecols=(0,1), skiprows=1)
-iras_wvlnth_micron, iras_lamdaF_lamda = np.loadtxt('iras_spectra.txt', unpack=True, skiprows=1)
+iso_wvlnth, iso_flux_Jy, iso_uncer_FJy, iso_uncer_F_norm = np.loadtxt(
+    'C:/UTSA\Research\DUSTY\DUSTY\Sean_mod\Python_code\iso_spectra.txt', 
+    unpack=True, skiprows=2)
+V_date, V_mag = np.loadtxt(
+    'C:/UTSA\Research\DUSTY\DUSTY\Sean_mod\Python_code/aavsodata.txt', 
+    unpack=True, usecols=(0,1), skiprows=1)
+iras_wvlnth_micron, iras_lamdaF_lamda = np.loadtxt(
+    'C:/UTSA\Research\DUSTY\DUSTY\Sean_mod\Python_code/iras_spectra.txt', 
+    unpack=True, skiprows=1)
 
 
 
@@ -225,8 +231,10 @@ f_tot_norm3 = normalization(f_tot_model3, model_flux_val3, norm_point)
 
 # Now everything is ready to plot! 
 
-m = 'SED Comparison - RX Boo - model {}'.format(l)
+# m = 'SED Comparison - RX Boo - model {}'.format(l)
+m = 'SED - RX Boo'
 
+'''
 axs = plt.figure().subplot_mosaic([
     ["zoom1"],
     ["main"],
@@ -237,41 +245,58 @@ axs["zoom1"].set(xlim=(7.5, 27.5),xscale='linear', yscale='linear', ylim=(1e-11,
 axs["main"].plot(iras_wvlnth_micron, iras_lamdaF_lamda, 'yo', markersize=2,)
 axs["main"].plot(model_lamda2, f_tot_norm2, 'k', )
 axs["main"].plot(iso_wvlnth, iso_flux_Wm2, 'mo', markersize=2,)
-axs["main"].plot(B_lam, B_lamflam, 'blue', markersize=4, marker='.')
-axs["main"].plot(V_lam, V_lamflam, 'blue', markersize=4, marker='.')
+axs["main"].plot(B_lam, B_lamflam, 'g', markersize=4, marker='.', label='BVJHK')
+axs["main"].plot(V_lam, V_lamflam, 'g', markersize=4, marker='.')
 axs["main"].plot(J_lam, J_lamflam, 'g', markersize=4, marker='.')
 axs["main"].plot(H_lam, H_lamflam, 'g', markersize=4, marker='.')
 axs["main"].plot(K_lam, K_lamflam, 'g', markersize=4, marker='.')
-axs["main"].plot(12, f12c, 'r', markersize=4, marker='.')
+axs["main"].plot(12, f12c, 'r', markersize=4, marker='.', label="ISO Photometric")
 axs["main"].plot(25, f25c, 'r', markersize=4, marker='.')
 axs["main"].plot(60, f60c, 'r', markersize=4, marker='.')
 axs["main"].plot(100, f100c, 'r', markersize=4, marker='.')
+'''
+fig,ax = plt.subplots()
+ax.set(xscale='log', yscale='log', xlim=(1,60), ylim=(1e-11, 1e-8))
+ax.set_title(m, fontsize=16)
+ax.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
+ax.set_ylabel(r'$\lambda$F$_{\lambda}$', fontsize=14)
 
+ax.vlines(4.6, 1e-11, 1e-9, color='b')
+ax.annotate('CO',
+    xy=(4.6, 1e-9), xycoords='data',
+    xytext=(4.0, 7e-9), textcoords='data',
+    arrowprops=dict(arrowstyle="->"), color='b')
 
-# axs["main"].vlines(4.6, 1e-11, 1e-9, label='CO', color='b')
-# axs["main"].annotate('CO',
-#     xy=(4.6, 1e-11), xycoords='data',
-#     xytext=(4.0, 1e-12), textcoords='data',
-#     arrowprops=dict(arrowstyle="->"), color='b')
+ax.vlines(6.6, 1e-11, 1e-9, color='c')
+ax.annotate('H2O',
+    xy=(6.6, 1e-9), xycoords='data',
+    xytext=(5.3, 7e-9), textcoords='data',
+    arrowprops=dict(arrowstyle="->"), color='c')
 
-# axs["main"].vlines(6.6, 1e-11, 1e-9, color='c')
-# axs["main"].annotate('H2O',
-#     xy=(6.6, 1e-11), xycoords='data',
-#     xytext=(5.3, 1e-12), textcoords='data',
-#     arrowprops=dict(arrowstyle="->"), color='c')
+ax.vlines(8.1, 1e-11, 1e-9, color='g')
+ax.annotate('SiO',
+    xy=(8.1, 1e-9), xycoords='data',
+    xytext=(8.1, 7e-9), textcoords='data',
+    arrowprops=dict(arrowstyle="->"), color='g')
 
-# axs["main"].vlines(8.1, 1e-11, 1e-9, color='g')
-# axs["main"].annotate('SiO',
-#     xy=(8.1, 1e-11), xycoords='data',
-#     xytext=(8.1, 1e-12), textcoords='data',
-#     arrowprops=dict(arrowstyle="->"), color='g')
+ax.plot(iras_wvlnth_micron, iras_lamdaF_lamda, 'yo', markersize=2,label='IRAS')
+ax.plot(model_lamda2, f_tot_norm2, 'k', label='DUSTY')
+ax.plot(iso_wvlnth, iso_flux_Wm2, 'mo', markersize=2, label='ISO')
+ax.plot(B_lam, B_lamflam, 'g', markersize=4, marker='.', label='BVJHK')
+ax.plot(V_lam, V_lamflam, 'g', markersize=4, marker='.')
+ax.plot(J_lam, J_lamflam, 'g', markersize=4, marker='.')
+ax.plot(H_lam, H_lamflam, 'g', markersize=4, marker='.')
+ax.plot(K_lam, K_lamflam, 'g', markersize=4, marker='.')
+ax.plot(12, f12c, 'r', markersize=4, marker='.', label="ISO Photometric")
+ax.plot(25, f25c, 'r', markersize=4, marker='.')
+ax.plot(60, f60c, 'r', markersize=4, marker='.')
+ax.plot(100, f100c, 'r', markersize=4, marker='.')
+ax.legend()
+# axs["zoom1"].plot(iras_wvlnth_micron, iras_lamdaF_lamda, 'yo', markersize=2,)
+# axs["zoom1"].plot(iso_wvlnth, iso_flux_Wm2, 'mo', markersize=2,)
+# axs["zoom1"].plot(model_lamda2, f_tot_norm2, 'k')
 
-
-axs["zoom1"].plot(iras_wvlnth_micron, iras_lamdaF_lamda, 'yo', markersize=2,)
-axs["zoom1"].plot(iso_wvlnth, iso_flux_Wm2, 'mo', markersize=2,)
-axs["zoom1"].plot(model_lamda2, f_tot_norm2, 'k')
-
-zoom_effect01(axs["zoom1"], axs["main"], 7.5, 27.5)
+# zoom_effect01(axs["zoom1"], axs["main"], 7.5, 27.5)
 
 plt.savefig(m+'.png')
 plt.show()
