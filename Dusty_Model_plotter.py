@@ -19,7 +19,7 @@ plt.close('all')
 
 l = '0211'
 
-path = "C:/UTSA/Research/DUSTY/DUSTY/Sean_mod/Model_library/{0}/sphere-1_{0}".format(l)
+path = "/home/physics/Research/DUSTY/DUSTY/Sean_mod/Model_Library/{0}/sphere-1_{0}".format(l)
 
 # These first few functions do all of the math stuff. 
 # The first one converts the magnitude into luminosity
@@ -182,13 +182,13 @@ f100 = 258e01
 # Spectra is now imported into your code. these files need to be in the same directory
 # as your python code.
 iso_wvlnth, iso_flux_Jy, iso_uncer_FJy, iso_uncer_F_norm = np.loadtxt(
-    'C:/UTSA\Research\DUSTY\DUSTY\Sean_mod\Python_code\iso_spectra.txt', 
+    'ISO_spectra.txt', 
     unpack=True, skiprows=2)
 V_date, V_mag = np.loadtxt(
-    'C:/UTSA\Research\DUSTY\DUSTY\Sean_mod\Python_code/aavsodata.txt', 
+    'aavsodata.txt', 
     unpack=True, usecols=(0,1), skiprows=1)
 iras_wvlnth_micron, iras_lamdaF_lamda = np.loadtxt(
-    'C:/UTSA\Research\DUSTY\DUSTY\Sean_mod\Python_code/iras_spectra.txt', 
+    'iras_spectra.txt', 
     unpack=True, skiprows=1)
 
 
