@@ -20,12 +20,12 @@ import os
 
 
 dust_dir = ['/home/physics/Research/DUSTY/DUSTY/Lib_nk/', 
-            "C:/UTSA/Research/DUSTY/DUSTY/Lib_nk/"]
+            'C:/Users/Max/Documents/DUSTY/dusty-master/data/Lib_nk']
 # this is the possible locations of where dust can be
 
 
 nk_path = dust_dir[1]               #where the dust is 
-dust = 'oliv_nk_y.nk'                  #DUST NAME HERE #grf
+dust = 'SiC-peg.nk'                  #DUST NAME HERE #grf
 rho = 3.33 #grams cm**-3            #density
 pathy = os.path.join(nk_path, dust) #pipeline is open
 wavelen, n_dust, k_dust = np.loadtxt(pathy, skiprows=12, unpack=True)
@@ -35,7 +35,7 @@ m = np.array([complex(n_dust[i], k_dust[i]) for i in range(len(wavelen))])
 
 ##############################################################################
 ### Bringing in a second dust
-dust2 = 'oliv_nk_x.nk' #sil-dl
+dust2 = 'amC-hann.nk' #sil-dl
 pathb = os.path.join(nk_path, dust2)
 wavelen2, n_dust2, k_dust2 = np.loadtxt(pathb, skiprows=12, unpack=True)
                                     #lamda, n, and k values are extracted
@@ -46,7 +46,7 @@ m2 = np.array([complex(n_dust2[i], k_dust2[i]) for i in range(len(wavelen2))])
 
 ##############################################################################
 ### Bringing in a third dust
-dust3 = 'oliv_nk_z.nk'
+dust3 = 'gra-par-draine.nk'
 pathc = os.path.join(nk_path, dust3)
 wavelen3, n_dust3, k_dust3 = np.loadtxt(pathc, skiprows=12, unpack=True)
                                     #lamda, n, and k values are extracted
@@ -55,16 +55,16 @@ m3 = np.array([complex(n_dust3[i], k_dust3[i]) for i in range(len(wavelen3))])
                                     #joins n, k values into complex number
 
 
-wt_a = 0.53
-wt_b = 0.47
-wt_c = 0
+wt_a = 0.34
+wt_b = 0.33
+wt_c = 0.33
 avg_wts=[wt_a,wt_b,wt_c]
 # m_avg = np.array([np.average((m[j], m2[j], m3[j]),weights=avg_wts)for j in range(min(len(m),len(m2),len(m3)))])
 
 
 
 
-wavelen = wavelen**(-1) * 10000   #Convert wavelen2 to waveLENGTH from waveNUMBER
+#wavelen = wavelen**(-1) * 10000   #Convert wavelen2 to waveLENGTH from waveNUMBER
 
 
 
@@ -174,25 +174,56 @@ kappa_ercde *= (2 * np.pi / (1e-4*wavelen)) / rho
 
 
 
-fig,ax = plt.subplots()
-title = 'Effects of Different Distributions of Grain Shapes \n on Average Index of Refraction'
-ax.set(xscale='linear', yscale='log', xlim=(8.5,100), ylim=(1, 10000))
-ax.set_title(title, fontsize=16)
-ax.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
-ax.set_ylabel(r'$<\kappa>$ cm$^{2}$ g$^{-1}$', fontsize=14)
-ax.plot(wavelen, kappa_cde, label='CDE')
-ax.plot(wavelen, kappa_cde2, label='CDE2')
-ax.plot(wavelen, kappa_ercde, label='ERCDE')
-ax.legend()
+# Determine the bounds
+x_min = min(wavelen)
+x_max = max(wavelen)
+y_min = min(min(kappa_cde), min(kappa_cde2), min(kappa_ercde))
+y_max = max(max(kappa_cde), max(kappa_cde2), max(kappa_ercde))
 
+
+# Filter data for wavelengths below 50 microns
+mask = wavelen < 70
+wavelen_sub50 = wavelen[mask]
+kappa_cde_sub50 = kappa_cde[mask]
+kappa_cde2_sub50 = kappa_cde2[mask]
+kappa_sub50_sub50 = kappa_ercde[mask]
+
+# Determine the bounds for the second plot
+x_min_sub50 = min(wavelen_sub50)
+x_max_sub50 = max(wavelen_sub50)
+y_min_sub50 = min(min(kappa_cde_sub50), min(kappa_cde2_sub50), min(kappa_sub50_sub50))
+y_max_sub50 = max(max(kappa_cde_sub50), max(kappa_cde2_sub50), max(kappa_sub50_sub50))
+
+# Create the first subplot for all wavelengths
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+
+# First subplot
+ax1.set(xscale='linear', yscale='log')
+ax1.set_xlim(x_min, x_max)
+ax1.set_ylim(y_min, y_max)
+ax1.set_title('Effects of Different Distributions of Grain Shapes \n on Average Index of Refraction', fontsize=16)
+ax1.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
+ax1.set_ylabel(r'$<\kappa>$ cm$^{2}$ g$^{-1}$', fontsize=14)
+ax1.plot(wavelen, kappa_cde, label='CDE')
+ax1.plot(wavelen, kappa_cde2, label='CDE2')
+ax1.plot(wavelen, kappa_ercde, label='ERCDE')
+ax1.legend()
+
+# 50 micron subplot
+ax2.set(xscale='linear', yscale='log')
+ax2.set_xlim(x_min_sub50, x_max_sub50)
+ax2.set_ylim(y_min_sub50, y_max_sub50)
+ax2.set_title('Effects of Different Distributions of Grain Shapes \n on Average Index of Refraction (λ < 50 μm)', fontsize=16)
+ax2.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
+ax2.set_ylabel(r'$<\kappa>$ cm$^{2}$ g$^{-1}$', fontsize=14)
+ax2.plot(wavelen_sub50, kappa_cde_sub50, label='CDE')
+ax2.plot(wavelen_sub50, kappa_cde2_sub50, label='CDE2')
+ax2.plot(wavelen_sub50, kappa_sub50_sub50, label='ERCDE')
+ax2.legend()
+
+plt.tight_layout()
 
 plt.show()
-
-
-
-
-
-
 
 def volume_integrand_mrn(r, q):
     v = r**(-q)
