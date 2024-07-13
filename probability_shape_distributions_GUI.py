@@ -1,6 +1,14 @@
 # %% [markdown]
 # # Calculating the absorption and scattering cross section using a probability distribution
 
+# Max TO-DO
+# Integrate with new Sean code DONE
+# Individual radius sliders for each dust
+# Allow selecting less than max dust DONE
+# Checkboxes for each dist DONE
+# More saving options
+# Fix CDE-tCDE
+# Save logs to root folder
 # %%
 import time
 # AA = time.time()
@@ -10,37 +18,86 @@ import scipy.integrate as spit
 import os
 import tkinter.filedialog
 import tkinter as tk
-print('hello world')
+from tkinter import ttk
+from ttkthemes import ThemedTk
+import configparser
+
+print('Imports done')
 
 
 # %% [markdown]
 # ### This defines the probability distribution
-# Function to select directory
+
+
+config = configparser.ConfigParser()
+
+def save_config():
+    config['GUI SETTINGS'] = {
+        'Dust Directory': dust_dir.get(),
+    }
+    with open('gui_config.ini', 'w') as configfile:
+        config.write(configfile)
+
+def load_config():
+    if os.path.exists('gui_config.ini'):
+        config.read('gui_config.ini')
+        dust_dir.set(config['GUI SETTINGS'].get('Dust Directory', ''))
+
+def save_and_exit():
+    save_config()
+    root.destroy()
+
 def select_directory():
     dir_name = tkinter.filedialog.askdirectory()
     dust_dir.set(dir_name)
     print(dust_dir.get())
 
-# Functions to select dust files
-def select_dust1():
-    file_path = tkinter.filedialog.askopenfilename(initialdir=dust_dir.get(), filetypes=[("nk files", "*.nk")])
-    file_name = os.path.basename(file_path)
-    dust1.set(file_name)
-    print(dust1.get())
 
-def select_dust2():
+def select_dust(index):
     file_path = tkinter.filedialog.askopenfilename(initialdir=dust_dir.get(), filetypes=[("nk files", "*.nk")])
     file_name = os.path.basename(file_path)
-    dust2.set(file_name)
-    print(dust2.get())
+    dusts[index].set(file_name)
+    print(dusts[index].get())
 
-def select_dust3():
-    file_path = tkinter.filedialog.askopenfilename(initialdir=dust_dir.get(), filetypes=[("nk files", "*.nk")])
-    file_name = os.path.basename(file_path)
-    dust3.set(file_name)
-    print(dust3.get())
+
+def add_dust():
+    global dust_count
+    dust_count += 1
+    dust_var = tk.StringVar()
+    weight_var = tk.DoubleVar()
+    dist_var = tk.StringVar(value="spheres")
+    dusts.append(dust_var)
+    weights.append(weight_var)
+    distributions.append(dist_var)
+    row = dust_count + 1
+
+    ttk.Label(root, text=f"Dust: {dust_count}").grid(row=row, column=0, padx=10, pady=5)
+    ttk.Entry(root, textvariable=dust_var, state=tk.DISABLED).grid(row=row, column=1, padx=10, pady=5)
+    ttk.Button(root, text="Select", command=lambda index=dust_count-1: select_dust(index)).grid(row=row, column=2, padx=10, pady=5)
+    ttk.Entry(root, textvariable=weight_var, width=5).grid(row=row, column=3, padx=10, pady=5)
+    ttk.OptionMenu(root, dist_var, "spheres", "spheres", "CDE", "CDE2", "ERCDE", "tCDE").grid(row=row, column=4, padx=10, pady=5)
+
+    add_button.grid(row=dust_count + 2, column=0, padx=10, pady=10)
+    remove_button.grid(row=dust_count + 2, column=1, padx=10, pady=10)
+
+def remove_dust():
+    global dust_count
+    if dust_count > 1:
+
+        for widget in root.grid_slaves(row=dust_count + 1):
+            widget.grid_forget()
+
+        dusts.pop()
+        weights.pop()
+        distributions.pop()
+        dust_count -= 1
+
+        add_button.grid(row=dust_count + 2, column=0, padx=10, pady=10)
+        remove_button.grid(row=dust_count + 2, column=1, padx=10, pady=10)
+    
 # %%
 def run_program():
+    print('Program started')
     def probability(dis_name, l1, l2, lmin=0.05, m1=0, m2=0, d=0):
         '''
         This is the probability distribution as a function of L1 and L2, the 
@@ -80,7 +137,7 @@ def run_program():
             return True
             
         
-    print('hello world')
+    print('probability done')
 
     # %% [markdown]
     # ### I think it would be easier to make the tCDE its own function
@@ -132,7 +189,7 @@ def run_program():
 
     def bounds_l2(l1):
         return [0,1-l1]
-    print('hello world')
+    print('bounds done')
 
 
     # %% [markdown]
@@ -160,7 +217,7 @@ def run_program():
 
     # j = cabs(m, 'spheres', bounds_l2, bounds_l1)
     # # dust = 'grph1-dl.nk'                  #DUST NAME HERE #grf
-    rho = 3.33 #grams cm**-3            #density
+  #  rho = 3.33 #grams cm**-3            #density
     # # pathy = os.path.join(nk_path, dust) #pipeline is open
     # # wavelen, n_dust, k_dust = np.loadtxt(pathy, skiprows=7, unpack=True)
     # #                                     #lamda, n, and k values are extracted
@@ -181,10 +238,13 @@ def run_program():
     # # Specify which dust we are using
 
     # %%
-    dustlist = [(dust1.get(), 'spheres'), (dust2.get(), 'spheres'), (dust3.get(), 'spheres')]
-    namelist = [dustlist[j][0][:-3]+dustlist[j][1]+'.dat' for j in range(len(dustlist))]
-    weightlist = [wt_a.get(), wt_b.get(), wt_c.get()]
+   # dustlist = [(dust1.get(), dist_a.get()), (dust2.get(), dist_b.get()), (dust3.get(), dist_c.get())]
 
+   # weightlist = [wt_a.get(), wt_b.get(), wt_c.get()]
+    dustlist = [(dusts[j].get(), distributions[j].get()) for j in range(dust_count)]
+    print(dustlist)
+    namelist = [dustlist[j][0][:-3]+dustlist[j][1]+'.dat' for j in range(len(dustlist))]
+    weightlist = [weights[j].get() for j in range(dust_count)]
     #dust_dir = ['/home/physics/Research/DUSTY/DUSTY/Lib_nk/', 
     #            "C:/Users/Max/Documents/DUSTY/dusty-master/data/Lib_nk/"]
     # this is the possible locations of where dust can be
@@ -211,13 +271,13 @@ def run_program():
         for i in range(len(output)):
             f.write(f"{output[i,0]} \t {output[i,1]} \t {output[i,2]}\n")
         f.close()
-
+        print(pathy)
         
         
 
 
     lam_final = np.geomspace(0.2, 500, num=500)
-    total_array = np.ndarray((3,len(lam_final),len(dustlist)))
+    total_array = np.ndarray((len(dustlist), len(lam_final), 3))
     total_array[:,:,0] = lam_final
 
     for k in range(len(namelist)):
@@ -255,11 +315,21 @@ def run_program():
     # lam_new, cab_new, csa_new = np.loadtxt('ism.dat', unpack=True, skiprows=3)
     lam_old, cab_old, csa_old = np.loadtxt(titlestring+'.dat', unpack=True)
 
+    fig, ax = plt.subplots()
+    y_axis = yaxis.get()
+    if y_axis == "C_abs":
+        y_axis = cab_old
+        ax.set_ylabel(r'$C_{\mathrm{abs}}$ (cm$^2$/g)', fontsize=14)
+        title = 'x=lambda y=c_abs'
+    else:
+        y_axis = csa_old
+        ax.set_ylabel(r'$C_{\mathrm{sca}}$ (cm$^2$/g)', fontsize=14)
+        title = 'x=lambda y=c_sca'
+
     x_min = min(lam_old)
     x_max = max(lam_old)
-    y_min = min(csa_old)
-    y_max = max(csa_old)
-
+    y_min = min(y_axis)
+    y_max = max(y_axis)
     #fig, ax = plt.subplots()
     #ax.set(xscale='linear', yscale='log')
 
@@ -270,61 +340,62 @@ def run_program():
     #ax.set_ylabel(r'$<C_{abs}>$ cm$^{2}$ g$^{-1}$', fontsize=14)
     #ax.plot(wavelen, avg_array, label='please')
     #ax.legend()
-    fig, ax = plt.subplots()
+
     title = 'Lorem ipsum dolor sit amet. '
     ax.set(xscale='log', yscale='log', xlim=(2,500))
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     ax.set_title(title, fontsize=16)
     ax.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
-    ax.set_ylabel(r'$<C_{abs}>$ cm$^{2}$ g$^{-1}$', fontsize=14)
+
     #ax.plot(lam_new, csa_new, label='new')
-    ax.plot(lam_old, csa_old, label='old')
+    ax.plot(lam_old, y_axis, label='old')
     # ax.plot(wavelen, np.array((cabs_ercde)), label='ERCDE')
     ax.legend()
     plt.tight_layout()
 
     plt.show()
-
-
+    print("DONE!")
 
 # %%
-root = tk.Tk()
-root.title("GUI still wip")
+#tk.Scale(root, from_=0, to=100, orient=tk.HORIZONTAL, variable=wt_b).grid(row=5, column=1)
+root = ThemedTk(theme="ubuntu")
+root.title("Dust Properties")
 
 dust_dir = tk.StringVar()
-dust1 = tk.StringVar()
-dust2 = tk.StringVar()
-dust3 = tk.StringVar()
+dusts = [tk.StringVar()]
+weights = [tk.DoubleVar(value=0.0)]
+distributions = [tk.StringVar(value="spheres")]
+yaxis = tk.StringVar(value="C_abs")
+dust_count = len(dusts)
 
-tk.Label(root, text="Dust File Directory").grid(row=0, column=0)
-tk.Entry(root, textvariable=dust_dir).grid(row=0, column=1)
-tk.Button(root, text="Select Directory", command=select_directory).grid(row=0, column=2)
+ttk.Label(root, text="Dust Directory:").grid(row=0, column=0, padx=10, pady=5)
+ttk.Entry(root, textvariable=dust_dir, state=tk.DISABLED, width=60).grid(row=0, column=1, columnspan=3, padx=10, pady=5)
+ttk.Button(root, text="Select", command=select_directory).grid(row=0, column=4, padx=10, pady=5)
 
-tk.Label(root, text="Dust File 1").grid(row=1, column=0)
-tk.Entry(root, textvariable=dust1).grid(row=1, column=1)
-tk.Button(root, text="Select Dust 1", command=select_dust1).grid(row=1, column=2)
+ttk.Label(root, text="File").grid(row=1, column=1, padx=10, pady=5)
+ttk.Label(root, text="Weight").grid(row=1, column=3, padx=10, pady=5)
+ttk.Label(root, text="Distribution").grid(row=1, column=4, padx=10, pady=5)
 
-tk.Label(root, text="Dust File 2").grid(row=2, column=0)
-tk.Entry(root, textvariable=dust2).grid(row=2, column=1)
-tk.Button(root, text="Select Dust 2", command=select_dust2).grid(row=2, column=2)
+ttk.Label(root, text="Dust 1:").grid(row=2, column=0, padx=10, pady=5)
+ttk.Entry(root, textvariable=dusts[0], state=tk.DISABLED).grid(row=2, column=1, padx=10, pady=5)
+ttk.Button(root, text="Select", command=lambda index=0: select_dust(index)).grid(row=2, column=2, padx=10, pady=5)
+ttk.Entry(root, textvariable=weights[0], width=5).grid(row=2, column=3, padx=10, pady=5)
+ttk.OptionMenu(root, distributions[0], "spheres", "spheres", "CDE", "CDE2", "ERCDE", "tCDE").grid(row=2, column=4, padx=10, pady=5)
 
-tk.Label(root, text="Dust File 3").grid(row=3, column=0)
-tk.Entry(root, textvariable=dust3).grid(row=3, column=1)
-tk.Button(root, text="Select Dust 3", command=select_dust3).grid(row=3, column=2)
+add_button = ttk.Button(root, text="Add Dust", command=add_dust).grid(row=98, column=0, padx=10, pady=10)
+remove_button = ttk.Button(root, text="Remove Dust", command=remove_dust).grid(row=98, column=1, padx=10, pady=10)
 
-tk.Label(root, text="Set Weights for Each Dust File").grid(row=4, column=0)
+ttk.Label(root, text="Y-Axis:").grid(row=99, column=0, padx=10, pady=5)
+ttk.OptionMenu(root, yaxis, "C_abs", "C_abs", "C_sca").grid(row=99, column=1, padx=10, pady=5)
 
-wt_a = tk.DoubleVar()
-wt_b = tk.DoubleVar()
-wt_c = tk.DoubleVar()
+run_button = ttk.Button(root, text="Run Program", command=run_program, style='Accent.TButton', state=tk.ACTIVE)
+run_button.grid(row=100, column=4, padx=10, pady=10)
 
-tk.Scale(root, from_=0, to=100, orient=tk.HORIZONTAL, variable=wt_a).grid(row=5, column=0)
-tk.Scale(root, from_=0, to=100, orient=tk.HORIZONTAL, variable=wt_b).grid(row=5, column=1)
-tk.Scale(root, from_=0, to=100, orient=tk.HORIZONTAL, variable=wt_c).grid(row=5, column=2)
-
-tk.Button(root, text="Run Program", command=run_program).grid(row=6, column=1)
+load_config()
+root.protocol("WM_DELETE_WINDOW", save_and_exit)
 
 root.mainloop()
 
-
+ 
+# %%
