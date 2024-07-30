@@ -10,7 +10,7 @@
 # Fix CDE-tCDE
 # Save logs to root folder
 # %%
-import time
+#import time
 # AA = time.time()
 import numpy as np
 import matplotlib.pyplot as plt
@@ -66,9 +66,15 @@ def add_dust():
     dust_var = tk.StringVar()
     weight_var = tk.DoubleVar()
     dist_var = tk.StringVar(value="spheres")
+    minr_var = tk.DoubleVar(value=0.005)
+    maxr_var = tk.DoubleVar(value=0.25)
+    q_var = tk.DoubleVar(value=3.5)
     dusts.append(dust_var)
     weights.append(weight_var)
     distributions.append(dist_var)
+    minrs.append(minr_var)
+    maxrs.append(maxr_var)
+    qs.append(q_var)
     row = dust_count + 1
 
     ttk.Label(root, text=f"Dust: {dust_count}").grid(row=row, column=0, padx=10, pady=5)
@@ -76,6 +82,9 @@ def add_dust():
     ttk.Button(root, text="Select", command=lambda index=dust_count-1: select_dust(index)).grid(row=row, column=2, padx=10, pady=5)
     ttk.Entry(root, textvariable=weight_var, width=5).grid(row=row, column=3, padx=10, pady=5)
     ttk.OptionMenu(root, dist_var, "spheres", "spheres", "CDE", "CDE2", "ERCDE", "tCDE").grid(row=row, column=4, padx=10, pady=5)
+    ttk.Entry(root, textvariable=minr_var, width=7).grid(row=row, column=5, padx=10, pady=5)
+    ttk.Entry(root, textvariable=maxr_var, width=7).grid(row=row, column=6, padx=10, pady=5)
+    ttk.Entry(root, textvariable=q_var, width=5).grid(row=row, column=7, padx=10, pady=5)
 
     add_button.grid(row=dust_count + 2, column=0, padx=10, pady=10)
     remove_button.grid(row=dust_count + 2, column=1, padx=10, pady=10)
@@ -90,6 +99,9 @@ def remove_dust():
         dusts.pop()
         weights.pop()
         distributions.pop()
+        minrs.pop()
+        maxrs.pop()
+        qs.pop()
         dust_count -= 1
 
         add_button.grid(row=dust_count + 2, column=0, padx=10, pady=10)
@@ -155,13 +167,11 @@ def run_program():
         return v
 
     # UNITS ARE IN MICRONS
-    rmin = 0.005
-    rmax = 0.25
-    q = 3.5
+   # rmin = 0.005
+   # rmax = 0.25
+   # q = 3.5
 
-    r_integral = spit.quad(volume_integrand_mrn, rmin, rmax, args=q)
-    r_average = ((1/(rmax - rmin)) * r_integral[0])**(1/-q)
-    v_avg = (4./3.) * np.pi * r_average**3
+
 
 
 
@@ -178,7 +188,7 @@ def run_program():
             term3 = 1.0 / abs(m[i]**2 - 1)**2
             sig.append(term1 * term2 * term3)
         return sig
-    print('hello world')
+    print(minrs, maxrs, qs)
 
     # %% [markdown]
     # ### creates our bounds for our geometric factors. The bounds are the sides of a triangle in (l1, l2) space
@@ -245,10 +255,13 @@ def run_program():
     print(dustlist)
     namelist = [dustlist[j][0][:-3]+dustlist[j][1]+'.dat' for j in range(len(dustlist))]
     weightlist = [weights[j].get() for j in range(dust_count)]
+    rminlist = [minrs[j].get() for j in range(dust_count)]
+    rmaxlist = [maxrs[j].get() for j in range(dust_count)]
+    qlist = [qs[j].get() for j in range(dust_count)]
     #dust_dir = ['/home/physics/Research/DUSTY/DUSTY/Lib_nk/', 
     #            "C:/Users/Max/Documents/DUSTY/dusty-master/data/Lib_nk/"]
     # this is the possible locations of where dust can be
-
+    print(rminlist,rmaxlist,qlist)
 
     #nk_path = dust_dir[1]               #where the dust is 
     nk_path = dust_dir.get()      
@@ -259,6 +272,9 @@ def run_program():
 
     for j in range(len(dustlist)):
         pathy = os.path.join(nk_path, dustlist[j][0]) #pipeline is open
+        r_integral = spit.quad(volume_integrand_mrn, rminlist[j], rmaxlist[j], args=qlist[j])
+        r_average = ((1/(rmaxlist[j] - rminlist[j])) * r_integral[0])**(1/-qlist[j])
+        v_avg = (4./3.) * np.pi * r_average**3
         wavelen, n_dust, k_dust = np.loadtxt(pathy, skiprows=8, unpack=True)
         m = np.array([complex(n_dust[i], k_dust[i]) for i in range(len(wavelen))])
         cab = cabs(m, dustlist[j][1], bounds_l2, bounds_l1)
@@ -365,6 +381,9 @@ root.title("Dust Properties")
 dust_dir = tk.StringVar()
 dusts = [tk.StringVar()]
 weights = [tk.DoubleVar(value=0.0)]
+minrs = [tk.DoubleVar(value=0.005)]
+maxrs = [tk.DoubleVar(value=0.25)]
+qs = [tk.DoubleVar(value=3.5)]
 distributions = [tk.StringVar(value="spheres")]
 yaxis = tk.StringVar(value="C_abs")
 dust_count = len(dusts)
@@ -376,12 +395,17 @@ ttk.Button(root, text="Select", command=select_directory).grid(row=0, column=4, 
 ttk.Label(root, text="File").grid(row=1, column=1, padx=10, pady=5)
 ttk.Label(root, text="Weight").grid(row=1, column=3, padx=10, pady=5)
 ttk.Label(root, text="Distribution").grid(row=1, column=4, padx=10, pady=5)
+ttk.Label(root, text="Radius Range (µm)").grid(row=1, column=5, columnspan=2, padx=0, pady=5)
+ttk.Label(root, text="Power Law\n Exponent").grid(row=1, column=7, padx=10, pady=5)
 
 ttk.Label(root, text="Dust 1:").grid(row=2, column=0, padx=10, pady=5)
 ttk.Entry(root, textvariable=dusts[0], state=tk.DISABLED).grid(row=2, column=1, padx=10, pady=5)
 ttk.Button(root, text="Select", command=lambda index=0: select_dust(index)).grid(row=2, column=2, padx=10, pady=5)
 ttk.Entry(root, textvariable=weights[0], width=5).grid(row=2, column=3, padx=10, pady=5)
 ttk.OptionMenu(root, distributions[0], "spheres", "spheres", "CDE", "CDE2", "ERCDE", "tCDE").grid(row=2, column=4, padx=10, pady=5)
+ttk.Entry(root, textvariable=minrs[0], width=7).grid(row=2, column=5, padx=10, pady=5)
+ttk.Entry(root, textvariable=maxrs[0], width=7).grid(row=2, column=6, padx=10, pady=5)
+ttk.Entry(root, textvariable=qs[0], width=5).grid(row=2, column=7, padx=10, pady=5)
 
 add_button = ttk.Button(root, text="Add Dust", command=add_dust).grid(row=98, column=0, padx=10, pady=10)
 remove_button = ttk.Button(root, text="Remove Dust", command=remove_dust).grid(row=98, column=1, padx=10, pady=10)
@@ -390,7 +414,7 @@ ttk.Label(root, text="Y-Axis:").grid(row=99, column=0, padx=10, pady=5)
 ttk.OptionMenu(root, yaxis, "C_abs", "C_abs", "C_sca").grid(row=99, column=1, padx=10, pady=5)
 
 run_button = ttk.Button(root, text="Run Program", command=run_program, style='Accent.TButton', state=tk.ACTIVE)
-run_button.grid(row=100, column=4, padx=10, pady=10)
+run_button.grid(row=100, column=100, padx=10, pady=10)
 
 load_config()
 root.protocol("WM_DELETE_WINDOW", save_and_exit)
