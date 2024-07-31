@@ -9,9 +9,9 @@
 # More saving options
 # Fix CDE-tCDE
 # Save logs to root folder
-# %%
-#import time
-# AA = time.time()
+
+# import packages
+
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.integrate as spit
@@ -24,12 +24,11 @@ import configparser
 
 print('Imports done')
 
-
-# %% [markdown]
-# ### This defines the probability distribution
-
+# set up config
 
 config = configparser.ConfigParser()
+
+# function that saves some gui selections
 
 def save_config():
     config['GUI SETTINGS'] = {
@@ -38,20 +37,27 @@ def save_config():
     with open('gui_config.ini', 'w') as configfile:
         config.write(configfile)
 
+# function that loads from a config file when program starts
+
 def load_config():
     if os.path.exists('gui_config.ini'):
         config.read('gui_config.ini')
         dust_dir.set(config['GUI SETTINGS'].get('Dust Directory', ''))
 
+# function that autosaves when program is closed
+
 def save_and_exit():
     save_config()
     root.destroy()
+
+# function that allows you to select the directory where the nk files are stored
 
 def select_directory():
     dir_name = tkinter.filedialog.askdirectory()
     dust_dir.set(dir_name)
     print(dust_dir.get())
 
+# function that allows you to select a file from the nk directory
 
 def select_dust(index):
     file_path = tkinter.filedialog.askopenfilename(initialdir=dust_dir.get(), filetypes=[("nk files", "*.nk")])
@@ -59,8 +65,12 @@ def select_dust(index):
     dusts[index].set(file_name)
     print(dusts[index].get())
 
+# function to add a dust to the gui 
 
 def add_dust():
+
+    # create variables for gui
+
     global dust_count
     dust_count += 1
     dust_var = tk.StringVar()
@@ -77,9 +87,11 @@ def add_dust():
     qs.append(q_var)
     row = dust_count + 1
 
+    # create gui elements and place them on a grid
+
     ttk.Label(root, text=f"Dust: {dust_count}").grid(row=row, column=0, padx=10, pady=5)
     ttk.Entry(root, textvariable=dust_var, state=tk.DISABLED).grid(row=row, column=1, padx=10, pady=5)
-    ttk.Button(root, text="Select", command=lambda index=dust_count-1: select_dust(index)).grid(row=row, column=2, padx=10, pady=5)
+    ttk.Button(root, text="Select", command=lambda index=dust_count-1: select_dust(index), width=5).grid(row=row, column=2, padx=10, pady=5)
     ttk.Entry(root, textvariable=weight_var, width=5).grid(row=row, column=3, padx=10, pady=5)
     ttk.OptionMenu(root, dist_var, "spheres", "spheres", "CDE", "CDE2", "ERCDE", "tCDE").grid(row=row, column=4, padx=10, pady=5)
     ttk.Entry(root, textvariable=minr_var, width=7).grid(row=row, column=5, padx=10, pady=5)
@@ -89,10 +101,11 @@ def add_dust():
     add_button.grid(row=dust_count + 2, column=0, padx=10, pady=10)
     remove_button.grid(row=dust_count + 2, column=1, padx=10, pady=10)
 
+# function to remove a dust from the gui
+
 def remove_dust():
     global dust_count
     if dust_count > 1:
-
         for widget in root.grid_slaves(row=dust_count + 1):
             widget.grid_forget()
 
@@ -106,8 +119,9 @@ def remove_dust():
 
         add_button.grid(row=dust_count + 2, column=0, padx=10, pady=10)
         remove_button.grid(row=dust_count + 2, column=1, padx=10, pady=10)
-    
-# %%
+
+# fuction that has all the math and graphing
+
 def run_program():
     print('Program started')
     def probability(dis_name, l1, l2, lmin=0.05, m1=0, m2=0, d=0):
@@ -148,37 +162,21 @@ def run_program():
         else:
             return True
             
-        
     print('probability done')
 
-    # %% [markdown]
-    # ### I think it would be easier to make the tCDE its own function
+    ## I think it would be easier to make the tCDE its own function
 
-    # %%
     def prob_tCDE(m1,m2,d):
         return 1/((1-d-m2)*(1-m1-m2-d) - 0.5*((1-d-m2)**2) - m1**2)
 
-    # %% [markdown]
-    # ### Now we define our volume function. v_avg is used to calculate sigma below
+    ## Now we define our volume function. v_avg is used to calculate sigma below
 
-    # %%
     def volume_integrand_mrn(r, q):
         v = r**(-q)
         return v
 
-    # UNITS ARE IN MICRONS
-   # rmin = 0.005
-   # rmax = 0.25
-   # q = 3.5
+    ## Creates function that calculates Sigma, defined in eq 13 in Min et al 2003
 
-
-
-
-
-    # %% [markdown]
-    # ### creates function that calculates Sigma, defined in eq 13 in Min et al 2003
-
-    # %%
     def sigma(m, lamda, v):
         sig = []
         for i in range(len(lamda)):
@@ -190,10 +188,8 @@ def run_program():
         return sig
     print(minrs, maxrs, qs)
 
-    # %% [markdown]
-    # ### creates our bounds for our geometric factors. The bounds are the sides of a triangle in (l1, l2) space
+    ## Creates our bounds for our geometric factors. The bounds are the sides of a triangle in (l1, l2) space
 
-    # %%
     def bounds_l1():
         return [0,1]
 
@@ -201,11 +197,8 @@ def run_program():
         return [0,1-l1]
     print('bounds done')
 
+    ## This is where we calculate the absorption cross-section (Cabs). It creates an empty list, then calculates Cabs for a given distribution at each wavelength as described in Min 03, eqn 15. It then uses this to find the shape averaged mass absorption coefficient for particles of a given volume, as described in Min 03, eqn 39
 
-    # %% [markdown]
-    # ### This is where we calculate the absorption cross-section (Cabs). It creates an empty list, then calculates Cabs for a given distribution at each wavelength as described in Min 03, eqn 15. It then uses this to find the shape averaged mass absorption coefficient for particles of a given volume, as described in Min 03, eqn 39
-
-    # %%
     def cabs(m, dis_name, bounds_l2, bounds_l1):
         cabs = []
         if dis_name=='spheres':
@@ -218,39 +211,13 @@ def run_program():
                     term1 = 1/3 * 1/(b + l1)
                     term2 = 1/3 * 1/(b + l2)
                     term3 = 1/3 * 1/(b + 1 - l1 - l2)
-                # r = np.real((term1 + term2 + term3)*probability(dis_name, l1, l2))
                     j = np.imag((term1 + term2 + term3)*probability(dis_name, l1, l2))
                     return j
-                # return np.real((term1 + term2 + term3)*probability(dis_name, l1, l2)) + np.imag((term1 + term2 + term3)*probability(dis_name, l1, l2))
                 cabs.append(spit.nquad(f, [bounds_l2, bounds_l1])[0])
         return cabs
 
-    # j = cabs(m, 'spheres', bounds_l2, bounds_l1)
-    # # dust = 'grph1-dl.nk'                  #DUST NAME HERE #grf
-  #  rho = 3.33 #grams cm**-3            #density
-    # # pathy = os.path.join(nk_path, dust) #pipeline is open
-    # # wavelen, n_dust, k_dust = np.loadtxt(pathy, skiprows=7, unpack=True)
-    # #                                     #lamda, n, and k values are extracted
-    # # m = np.array([complex(n_dust[i], k_dust[i]) for i in range(len(wavelen))])
-    # k = cabs(m, 'CDE', bounds_l2, bounds_l1)
+    ## Specify which dust we are using
 
-    # print(j)
-    # # print('')
-    # print(k)
-
-    # %% [markdown]
-    # 
-    # 
-    # 
-    # 
-    # 
-    # 
-    # # Specify which dust we are using
-
-    # %%
-   # dustlist = [(dust1.get(), dist_a.get()), (dust2.get(), dist_b.get()), (dust3.get(), dist_c.get())]
-
-   # weightlist = [wt_a.get(), wt_b.get(), wt_c.get()]
     dustlist = [(dusts[j].get(), distributions[j].get()) for j in range(dust_count)]
     print(dustlist)
     namelist = [dustlist[j][0][:-3]+dustlist[j][1]+'.dat' for j in range(len(dustlist))]
@@ -258,20 +225,17 @@ def run_program():
     rminlist = [minrs[j].get() for j in range(dust_count)]
     rmaxlist = [maxrs[j].get() for j in range(dust_count)]
     qlist = [qs[j].get() for j in range(dust_count)]
-    #dust_dir = ['/home/physics/Research/DUSTY/DUSTY/Lib_nk/', 
-    #            "C:/Users/Max/Documents/DUSTY/dusty-master/data/Lib_nk/"]
-    # this is the possible locations of where dust can be
+
     print(rminlist,rmaxlist,qlist)
 
-    #nk_path = dust_dir[1]               #where the dust is 
+    # set the nk path to the selected directory
+
     nk_path = dust_dir.get()      
-    # lam_max, cabs_max, csca_max = np.loadtxt(max(namelist, key=os.path.getsize), unpack=True)
 
-    # output = np.zeros((len(dustlist), len(lam_max), 3))
-
+    # calculate everything needed to generate the .dat file and the graph
 
     for j in range(len(dustlist)):
-        pathy = os.path.join(nk_path, dustlist[j][0]) #pipeline is open
+        pathy = os.path.join(nk_path, dustlist[j][0]) 
         r_integral = spit.quad(volume_integrand_mrn, rminlist[j], rmaxlist[j], args=qlist[j])
         r_average = ((1/(rmaxlist[j] - rminlist[j])) * r_integral[0])**(1/-qlist[j])
         v_avg = (4./3.) * np.pi * r_average**3
@@ -288,9 +252,6 @@ def run_program():
             f.write(f"{output[i,0]} \t {output[i,1]} \t {output[i,2]}\n")
         f.close()
         print(pathy)
-        
-        
-
 
     lam_final = np.geomspace(0.2, 500, num=500)
     total_array = np.ndarray((len(dustlist), len(lam_final), 3))
@@ -301,15 +262,13 @@ def run_program():
         total_array[k,:,1] = np.interp(lam_final, lam, cabs_tot)
         total_array[k,:,2] = np.interp(lam_final, lam, csca_tot)
 
-
-        
     avg_array = np.ndarray((len(lam_final),3))
     avg_array[:,0] = lam_final
     for j in range(len(lam_final)):
         avg_array[j,1] = np.average(total_array[:,j,1], weights=weightlist)
         avg_array[j,2] = np.average(total_array[:,j,2], weights=weightlist)
 
-        
+    # write .dat file
         
     titlestring=''
     for g in range(len(namelist)):
@@ -320,15 +279,10 @@ def run_program():
         f.write(f"{avg_array[i,0]} \t {avg_array[i,1]} \t {avg_array[i,2]}\n")
     f.close() 
         
-        
     print(titlestring)
 
+    # create plot
 
-    # %%
-
-
-    # %%
-    # lam_new, cab_new, csa_new = np.loadtxt('ism.dat', unpack=True, skiprows=3)
     lam_old, cab_old, csa_old = np.loadtxt(titlestring+'.dat', unpack=True)
 
     fig, ax = plt.subplots()
@@ -346,37 +300,25 @@ def run_program():
     x_max = max(lam_old)
     y_min = min(y_axis)
     y_max = max(y_axis)
-    #fig, ax = plt.subplots()
-    #ax.set(xscale='linear', yscale='log')
-
-    #title = 'Lorem ipsum dolor sit amet. '
-    #ax.set(xscale='log', yscale='log', xlim=(2,500))
-    #ax.set_title(title, fontsize=16)
-    #ax.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
-    #ax.set_ylabel(r'$<C_{abs}>$ cm$^{2}$ g$^{-1}$', fontsize=14)
-    #ax.plot(wavelen, avg_array, label='please')
-    #ax.legend()
-
-    title = 'Lorem ipsum dolor sit amet. '
+    title = ' '
     ax.set(xscale='log', yscale='log', xlim=(2,500))
     ax.set_xlim(x_min, x_max)
     ax.set_ylim(y_min, y_max)
     ax.set_title(title, fontsize=16)
     ax.set_xlabel(r'$\lambda (\mu m)$', fontsize=14)
-
-    #ax.plot(lam_new, csa_new, label='new')
     ax.plot(lam_old, y_axis, label='old')
-    # ax.plot(wavelen, np.array((cabs_ercde)), label='ERCDE')
     ax.legend()
     plt.tight_layout()
 
     plt.show()
     print("DONE!")
 
-# %%
-#
+# import theme for gui
+
 root = ThemedTk(theme="ubuntu")
 root.title("Dust Properties")
+
+# create variables for gui
 
 dust_dir = tk.StringVar()
 dusts = [tk.StringVar()]
@@ -388,9 +330,11 @@ distributions = [tk.StringVar(value="spheres")]
 yaxis = tk.StringVar(value="C_abs")
 dust_count = len(dusts)
 
+# create gui elements and place them on a grid
+
 ttk.Label(root, text="Dust Directory:").grid(row=0, column=0, padx=10, pady=5)
-ttk.Entry(root, textvariable=dust_dir, state=tk.DISABLED, width=60).grid(row=0, column=1, columnspan=3, padx=10, pady=5)
-ttk.Button(root, text="Select", command=select_directory).grid(row=0, column=4, padx=10, pady=5)
+ttk.Entry(root, textvariable=dust_dir, state=tk.DISABLED, width=50).grid(row=0, column=1, columnspan=3, padx=10, pady=5)
+ttk.Button(root, text="Select", command=select_directory, width=5).grid(row=0, column=4, padx=10, pady=5)
 
 ttk.Label(root, text="File").grid(row=1, column=1, padx=10, pady=5)
 ttk.Label(root, text="Weight").grid(row=1, column=3, padx=10, pady=5)
@@ -400,7 +344,7 @@ ttk.Label(root, text="Power Law\n Exponent").grid(row=1, column=7, padx=10, pady
 
 ttk.Label(root, text="Dust 1:").grid(row=2, column=0, padx=10, pady=5)
 ttk.Entry(root, textvariable=dusts[0], state=tk.DISABLED).grid(row=2, column=1, padx=10, pady=5)
-ttk.Button(root, text="Select", command=lambda index=0: select_dust(index)).grid(row=2, column=2, padx=10, pady=5)
+ttk.Button(root, text="Select", command=lambda index=0: select_dust(index), width=5).grid(row=2, column=2, padx=10, pady=5)
 ttk.Entry(root, textvariable=weights[0], width=5).grid(row=2, column=3, padx=10, pady=5)
 ttk.OptionMenu(root, distributions[0], "spheres", "spheres", "CDE", "CDE2", "ERCDE", "tCDE").grid(row=2, column=4, padx=10, pady=5)
 ttk.Entry(root, textvariable=minrs[0], width=7).grid(row=2, column=5, padx=10, pady=5)
@@ -416,10 +360,9 @@ ttk.OptionMenu(root, yaxis, "C_abs", "C_abs", "C_sca").grid(row=99, column=1, pa
 run_button = ttk.Button(root, text="Run Program", command=run_program, style='Accent.TButton', state=tk.ACTIVE)
 run_button.grid(row=100, column=100, padx=10, pady=10)
 
+# run gui event loop
+
 load_config()
 root.protocol("WM_DELETE_WINDOW", save_and_exit)
 
 root.mainloop()
-
- 
-# %%
