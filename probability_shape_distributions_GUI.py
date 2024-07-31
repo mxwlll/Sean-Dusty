@@ -374,7 +374,7 @@ def run_program():
     print("DONE!")
 
 # %%
-#tk.Scale(root, from_=0, to=100, orient=tk.HORIZONTAL, variable=wt_b).grid(row=5, column=1)
+#
 root = ThemedTk(theme="ubuntu")
 root.title("Dust Properties")
 
